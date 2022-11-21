@@ -17,7 +17,7 @@ class ScantistParser(object):
 
     Website: https://scantist.com/
     """
-
+    
     def get_scan_types(self):
         return ["Scantist Scan"]
 
@@ -42,20 +42,17 @@ class ScantistParser(object):
             vuln : input vulnerable node
             test :
             """
-            vulnerability_id = vuln.get("Public ID")
+            #vulnerability_id = vuln.get("Public ID")
+            vulnerability_id = vuln.get("Vulnerability ID")
             # default use OWASP a9 until the Scantist output report includes
-            cwe = 1035
-
+            cwe = vuln.get("CWE ID", "-1").replace("CWE-", "")
             component_name = vuln.get("Library")
             component_version = vuln.get("Library Version")
 
-            title = vulnerability_id + '|' + component_name
+            title = vulnerability_id + ' | ' + component_name
             description = vuln.get("Description")
-
             file_path = vuln.get("File Path", "")
-
-            severity = vuln.get("Score", "Info")
-
+            severity = vuln.get("Criticality", "Info")
             mitigation = vuln.get("Patched Version")
 
             finding = Finding(
@@ -65,24 +62,25 @@ class ScantistParser(object):
                 severity=severity,
                 cwe=cwe,
                 mitigation=mitigation,
-                references=vuln.get('references'),
+                #references=vuln.get('references'),
                 file_path=file_path,
                 component_name=component_name,
                 component_version=component_version,
-                severity_justification=vuln.get('severity_justification'),
-                dynamic_finding=True
+                #severity_justification=vuln.get('severity_justification'),
+                #dynamic_finding=True
             )
             if vulnerability_id:
                 finding.unsaved_vulnerability_ids = [vulnerability_id]
             return finding
 
         items = dict()
-        for node in tree:
+        for node in tree['items']:
             item = get_findings(node, test)
 
             if item:
                 hash_key = hashlib.md5(
-                    node.get('Public ID').encode('utf-8') + node.get('Library').encode('utf-8')).hexdigest()
+                    #node.get('Public ID').encode('utf-8') + node.get('Library').encode('utf-8')).hexdigest()
+                    node.get('Vulnerability ID').encode('utf-8') + node.get('Library').encode('utf-8')).hexdigest()
 
                 items[hash_key] = get_findings(node, test)
 
